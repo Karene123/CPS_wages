@@ -55,7 +55,7 @@ Exploring the American Labor Market starting from 1976 with the following variab
   <!-- GETTING STARTED -->
 ## Getting Started
 
-This dataset was downloaded from [Predoc.org](https://predoc.org/-/media/project/chicago-booth/consortium/predoc/documents/task_overview.pdf) as part of one of their data task. I took this opportunity to perform a thorough statistical analysis while answering the main research questions.
+This dataset was downloaded from [Predoc.org](https://predoc.org/-/media/project/chicago-booth/consortium/predoc/documents/task_overview.pdf) as part of one of their data tasks. I took this opportunity to perform a thorough statistical analysis while answering the main research questions.
 
 ### Prerequisites
 
