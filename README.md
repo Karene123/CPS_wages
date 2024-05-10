@@ -12,7 +12,7 @@
 1. [Project Overview](#Project-Overview)
 2. [Getting Started](#Getting-Started)
 3. [Prerequisites](#Prerequisites)
-4. [Utilized Python Libraries](#Utilized-Python-Libraries)
+4. [Utilized R Libraries](#Utilized-R-Libraries)
 5. [Installation](#Installation)
 6. [Challenges](#Challenges)
 7. [Summary of Results and Methods Used](#Summary-of-Results-and-Methods-Used)
