@@ -63,7 +63,7 @@ This dataset was downloaded from [Predoc.org](https://predoc.org/-/media/project
 
 Install and Import those libraries in order to access the project.
 
-### Utilized Python Libraries:
+### Utilized R Libraries:
 
 * [Dlpyr](https://dplyr.tidyverse.org/articles/dplyr.html)
 * [ModelSummary](https://modelsummary.com/)
