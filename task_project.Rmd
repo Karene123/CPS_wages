@@ -1,0 +1,340 @@
+---
+title: "**Data Task 1**"
+author: "Karene Matoka"
+date: "2024-04-16"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, out.width = "30%", fig.align = "center"}
+knitr::include_graphics("Sample_task/Labor-Force-Participation.png")
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(modelsummary)
+library(ggplot2)
+library(ggridges)
+library(egg)
+library(arulesViz)
+```
+
+## [**1/ Introduction**]{.underline}
+
+### A/ Background and Research Objectives
+
+The Integrated Public Use Microdata Series (IPUMS) has been providing a collection of data extracted from sixty surveys. This collection is recognized as having the most complete and richest quantifiable data on long-term changes in the American Population (Team, M. U. (n.d.)). Utilizing this website, a labor market analysis will be conducted followed by a data manipulation task. We will be working on two distinct datasets for each task. The first comes from the US Current Population Survey and the second involves Medicare.
+
+### B/ Overview of the Methodology
+
+The goal of this analysis is to explore how hourly wages and labor force participation progressed since 1976 depending on whether or not the worker was skilled. To offer an answer to this question, we will be exploring the trends for wages and labor force participation. Then, we will further analyze the groups of people who had the biggest changes in labor force participation. We will conclude by analyzing the potential factors that led to those patterns.
+
+## [2/ Data Collection and Preprocessing]{.underline}
+
+### A/ Exploratory Data Analysis and Exploring Missing Data
+
+#### **Data Dictionary**
+
+For the first task, we will be exploring the American Labor Market starting from 1976 with the following variables:
+
+-   `Year` indicates the year involved.
+-   `Statefip`indicates the state involved.
+-   `Month` indicates the month involved.
+-   `Wtsupp`
+-   `Age` includes the age included.
+-   `Sex` includes the sex included.
+-   `Race` includes the race included.
+-   `Hispanic`
+-   `Educ` includes the level of education.
+-   `Empstat` indicates whether the respondent was a part of the labor force
+-   `Occ` indicates occupation codes
+-   `Wkswork1` reports the number of weeks that the respondent worked for profit, pay, or as an unpaid family worker during the previous year.
+-   `Wkswork2` reports the number of weeks that the respondent worked for profit, pay, or as an unpaid family worker during the previous year.
+-   `Uhrswork` reports the number of hours per week that the respondent usually worked, if the person worked during the previous year.
+-   `Inctot` reports each respondent's total pre-tax personal income or losses from all sources for the previous year.
+-   `Incwage` reports each respondent's total pre-tax wage and salary income - that is, money received as an employee - for the previous year.
+-   `Age_group`
+-   `White`
+-   `Skilled` reports whether or not the worker is skilled.
+-   `Hours` reports the number of hours worked.
+-   `Wage` reports the wage.
+-   `Lfp`
+-   `Empstatid`
+
+#### **Exploratory Data Analysis**
+
+Upon closer examination of this dataset, the total number of observations is **6,883,923** representing individual-level data on year, state, month, survey weight, demographic characteristics, and labor market outcomes. Since this data comes from a series of questions given to participants, it is expected that most variables are categorical. During the data cleaning process, every empty field was replaced with NA values to maintain consistency and accuracy in handling missing values.
+
+```{r, echo=FALSE, message=FALSE}
+# Load the dataset
+cpswages <- read.csv("/All projects/Sample_task/cps_wages_LFP.csv")
+
+str(cpswages)
+
+# Check the dimension
+dim(cpswages) #6883923 data points for 23 informations
+```
+
+```{r, echo=FALSE, out.width = "30%", fig.align = "center"}
+# Take a look at the dataset
+head(cpswages)
+```
+
+Based on the graph representing missing patterns, it appears that `wage` is leading the way as it contains **4,279,451** missing wage information out of **6,883,923**. With at least **60%** of missing data, imputing this variable with data might lead to potential bias or less accurate imputation. Despite the high percentage of missing data, the variable `wage` was kept to answer the research question.
+
+```{r, include=FALSE, message=TRUE}
+# Include NA for all categorical variables for a more accurate representation of the number of missing data
+cpswages <- cpswages %>%
+  mutate(
+    empstatid = na_if(empstatid, ""),
+    lfp = na_if(lfp, ""),
+    age_group = na_if(age_group, ""),
+    wkswork2 = na_if(wkswork2, ""),
+    empstat = na_if(empstat, ""),
+    educ = na_if(educ, ""),
+    hispan = na_if(hispan, ""),
+    race = na_if(race, ""),
+    sex = na_if(sex, ""),
+    age = na_if(age, ""),
+    month = na_if(month, ""),
+    statefip = na_if(statefip, "")
+  )
+
+#Let's recalculate the number of missing values including categorical data
+cpswages3 <- cpswages
+p_missing2 <- unlist(lapply(cpswages3, function(x) sum(is.na(x))))/nrow(cpswages3)
+sort(p_missing2[p_missing2 > 0], decreasing = TRUE)
+
+# another way to represent missing data in percentage
+# Those highlights the number of numerical missing data 
+# cpswages2 <- cpswages
+# p_missing <- unlist(lapply(cpswages, function(x) sum(is.na(x))))/nrow(cpswages)
+# sort(p_missing[p_missing > 0], decreasing = TRUE)
+# colSums(is.na(cpswages))
+```
+
+### B/ Visualizations of Data Distribution
+
+Since our most of the variables are categorical, it is impossible to observe the distribution. However, histograms or boxplots represent other ways to observe trends within this dataset.
+
+#### What was the labor force participation based on gender from 1977 to 2015?
+
+Regardless of the regions within the United States, the trend appears to be similar over time. Before 1995, the number of individuals employed and unemployed stagnated followed by a slight decrease in the following years until 2000. Those numbers greatly increased and the southern region had the highest number of employed and unemployed individuals. In contrast, the midwestern region had the lowest counts out of all the regions.
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center'}
+# Inspect the dataset
+# modelsummary::datasummary_skim(cpswages)
+
+# The first graph Labor Force Participation over time
+# Since there are many states with different statistics around Labor Force Participation and sex, it is best to divide the states by region.
+
+cpswages$region <- NA
+
+cpswages <- cpswages %>%
+  mutate(region = case_when(
+    statefip %in% c("connecticut", "maine", "massachusetts", "new hampshire", "new jersey", "new york", "ohio", "pennsylvania", "rhode island", "vermont") ~ "Northern",
+    statefip %in% c("illinois", "indiana", "iowa", "kansas", "michigan", "minnesota", "missouri", "nebraska", "north dakota", "ohio", "south dakota", "wisconsin") ~ "Midwestern",
+    statefip %in% c("alabama", "arkansas", "delaware", "florida", "georgia", "kentucky", "louisiana", "maryland","district of columbia", "mississippi", "north carolina", "oklahoma", "south carolina", "tennessee", "texas", "virginia", "west virginia") ~ "Southern",
+    statefip %in% c("alaska", "arizona", "california", "colorado", "hawaii", "idaho", "montana", "nevada", "new mexico", "oregon", "utah", "washington", "wyoming") ~ "Western",
+    TRUE ~ NA_character_  # Default value if none of the conditions are met
+  ))
+
+cpswages %>%
+  select(year, region, sex, lfp) %>%
+  filter(!is.na(lfp)) %>%
+  group_by(year, region, sex, lfp) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = year, y = count, color = lfp)) + 
+  geom_line() +
+  labs(title = "Labor Force Participation based on sex") +
+  theme_minimal() +
+  facet_wrap(~region)
+```
+
+#### What was the labor force participation based on gender from 1977 to 2015?
+
+```{r}
+unique(cpswages$race)
+ 
+cpswages %>%
+  select(year, region, sex, lfp) %>%
+  filter(!is.na(lfp)) %>%
+  group_by(year, region, sex, lfp) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = year, y = count, color = lfp)) + 
+  geom_line() +
+  labs(title = "Labor Force Participation based on sex") +
+  theme_minimal() +
+  facet_wrap(~region)
+```
+
+#### What were the education levels based on different regions in the United States from 1977 to 1994? from 1995 to 1999? from 2000 to 2015?
+
+The majority of individuals in the United States before 1980 had no degree. This dynamic changed after 2000 and individuals with high school diplomas or equivalent surpassed all other categories. This same year, advanced degrees such as the master's, professional, and doctorate programs started to become more attractive. Overall, this trend stayed consistent until 2015. However, it can be noted that the southern region had the highest number of individuals with advanced degrees including high school diplomas and those numbers kept rising. In contrast, there was a decline in the midwestern and the northern region since 2001.
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center'}
+# The second graph represents Labor Force Participation based on education level
+
+cpswages$educ[cpswages$educ %in% c("grade 9", "grade 10", "grade 11", "12th grade, no diploma", "12th grade, diploma unclear")] <- "Without degree high school"
+
+cpswages$educ[cpswages$educ %in% c("grade 6", "grade 7", "grade 8", "grades 7 or 8")] <- "Middle School"
+
+cpswages$educ[cpswages$educ %in% c("grade 1", "grade 2", "grade 3", "grade 4", "grade 5", "grades 1, 2, 3, or 4", "grades 5 or 6")] <- "Elementary School"
+
+cpswages$educ[cpswages$educ %in% c("1 year of college", "2 years of college", "3 years of college", "4 years of college", "5 years of college", "some college but no degree", "6+ years of college", "In College but no degree")] <- "In College but no degree"
+
+cpswages$educ[cpswages$educ %in% c("associate's degree, academic program", "associate's degree, occupational/vocational program")] <- "associate's degree"
+
+
+first_timeline <- subset.data.frame(cpswages, year == 1977:1994)
+second_timeline <- subset.data.frame(cpswages, year == 1995:1999)
+third_timeline <- subset.data.frame(cpswages, year == 2000:2015)
+
+firsttimeline <- first_timeline %>%
+  select(year, region, educ) %>%
+  group_by(year, region, educ) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = year, y = count, color = educ)) + 
+  geom_line() +
+  labs(title = "Education level from 1977 to 1994 based on region within the United States") +
+  theme_minimal() +
+  facet_wrap(~region)
+
+
+secondtimeline <- second_timeline %>%
+  select(year, region, educ) %>%
+  group_by(year, region, educ) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = year, y = count, color = educ)) + 
+  geom_line() +
+  labs(title = "Education level from 1995 to 1999 based on region within the United States") +
+  theme_minimal() +
+  facet_wrap(~region)
+
+
+thirdtimeline <- third_timeline %>%
+  select(year, region, educ) %>%
+  group_by(year, region, educ) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = year, y = count, color = educ)) + 
+  geom_line() +
+  labs(title = "Education level from 2000 to 2015 based on region within the United States") +
+  theme_minimal() +
+  facet_wrap(~region)
+
+ggarrange(firsttimeline, secondtimeline, thirdtimeline, ncol = 3, nrow = 3)
+```
+
+#### How did hourly wage progress based on the work status in 1980? in 2002? in 2012?
+
+Regardless of the year, individuals with the following status: `nilf.retired`, `at work, has job, not at work, last week`, and `at work` represented the biggest number out of all status. Professionals with the following status: `armed.forces` only appeared after the year 2000.
+
+```{r}
+# The third graph represents wage based on empstats
+
+cpswages$empstat[cpswages$empstat %in% c("unemployed", "not in labor force", "unemployed, experienced worker")] <- "unemployed"
+
+ggplot(cpswages, 
+       aes(x = wage, y = empstat, fill = empstat)) +
+  geom_density_ridges() + 
+  theme_ridges() +
+  labs("Wage based on work status") +
+  theme(legend.position = "none") 
+
+
+filtered_first_year_graph <- filter(cpswages, year == 1980)
+filtered_second_year_graph <- filter(cpswages, year == 2002)
+filtered_third_year_graph <- filter(cpswages, year == 2012)
+
+filtered_first_plot <- ggplot(filtered_first_year_graph, aes(x = empstat, y = wage)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Wage based on work status in 1980") +
+  scale_y_continuous(limits = c(0, 150)) +
+  theme(axis.text.x = element_text(size = 8 , angle = 45, hjust = 1))
+  # Adjust the limits on the y-axis
+  #scale_x_discrete(labels = c("Group A", "Group B", "Group C"))
+  #xlim(0, 5000)
+
+
+filtered_second_plot <- ggplot(filtered_second_year_graph, aes(x = empstat, y = wage)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Wage based on work status in 2002") +
+  scale_y_continuous(limits = c(0, 150)) +
+  theme(axis.text.x = element_text(size = 8 , angle = 45, hjust = 1))
+  # Adjust the limits on the y-axis
+  #scale_x_discrete(labels = c("Group A", "Group B", "Group C"))
+  #xlim(0, 5000)
+
+filtered_third_plot <- ggplot(filtered_third_year_graph, aes(x = empstat, y = wage)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Wage based on work status in 2012") +
+  scale_y_continuous(limits = c(0, 150)) +
+  theme(axis.text.x = element_text(size = 8 , angle = 45, hjust = 1))
+  # Adjust the limits on the y-axis
+  #scale_x_discrete(labels = c("Group A", "Group B", "Group C"))
+  #xlim(0, 5000)
+
+ggarrange(filtered_first_plot, filtered_second_plot, filtered_third_plot, ncol = 3, nrow = 3)
+
+```
+
+#### \*\* How was the hourly wage different between causasian and other minorities based on labor force participation from 1977 to 2015? \*\*
+
+The trend depicted from the graph showcases that the hourly wage increased over time for caucasians and minorities. Starting from 2000, the different increased slowly. On average, an individual who is caucasian in 2015 earned approximately \$24 per hour in comparison to \$22 per hour for an individual from a minority group. With regard to the labor force participation, the same trend is observed for both groups. However, the difference in hourly wage between individuals in the labor force and those are not became slightly significant over time. Additionally, it could be noted that individuals who were not in the labor force and were part of minority earned more than individuals who were working in 1995.
+
+```{r, include=FALSE, warning=FALSE, fig.align='center'}
+# The fourth graph represents wage based on Labor Force Participation 
+# plot mean salaries in a more attractive fashion
+unique(cpswages$white)
+
+cpswages %>%
+  select(lfp, wage, year, white) %>%
+  group_by(year, lfp, white) %>%
+  filter(!is.na(wage)) %>%
+  summarise(mean_wage = mean(wage)) %>%
+  ggplot(aes(x = year, y = mean_wage)) + 
+  geom_line(aes(color = lfp, linetype = lfp)) + 
+  scale_color_manual(values = c("darkred", "steelblue")) +
+  labs(title = "Hourly Wage on labor forced participation from 1977 to 2015 based on race") +
+  theme_minimal() +
+  facet_wrap(~white)
+
+```
+
+### Regression Analysis or Data Analysis
+
+I decided to remove the following variables: wkswork1, wkswork2, uhrsworkly    
+
+```{r, echo=FALSE, warning=FALSE}
+#library(plm)
+
+#fixed <- plm(as.factor(lfp) ~ wtsupp + age + sex + race + hispan + educ + empstat + occ  + empstatid + wage + hours + skilled + white + as.factor(age_group) + incwage + inctot, data=cpswages, index=c("statefip", "year", "month"), model="within")  #fixed model
+
+#random <- plm(as.factor(lfp) ~ wtsupp + as.factor(age) + as.factor(sex) + as.factor(race) + as.factor(hispan) + as.factor(educ) + as.factor(empstat) + occ  + as.factor(empstatid) + wage + hours + as.factor(skilled) + white + as.factor(age_group) + incwage + inctot, data=cpswages, index=c("statefip", "year", "month"), model="random")  #random model
+
+#phtest(fixed,random) 
+
+#str(cpswages)
+#unique(cpswages$age)
+```
+
+```{r}
+# Run a regression model
+#fixed <- plm(lfp ~ wtsupp + age + sex + race + hispan + educ + empstat + occ  + empstatid + wage + hours + skilled + white + age_group + incwage + inctot , data=cpswages, index=c("statefip", "year", "month"), model="within")
+#summary(fixed)
+```
+
+
+## 4/ Conclusion
+
+A potential explanation for the consistent lack of wages data is the acknowledgement that some individuals might be less inclined to share their wages information.
+
+## 5/ References
+
+-   Team, M. U. (n.d.). About Ipums USA. IPUMS USA. <https://usa.ipums.org/usa/about.shtml>
