@@ -1,9 +1,9 @@
-# LABOR FORCE PARTICIPATION BASED ON 
+# LABOR FORCE PARTICIPATION AND HOURLY WAGE PROGRESSION SINCE 1977 IN THE UNITED STATES
 
 <!-- PROJECT LOGO -->
 <br />
   <a href="https://github.com/Karene123/CPS_wages">
-    <img src="https://github.com/Karene123/ESG-Project/assets/70621033/26b3a4fd-b7a9-4385-b2d9-49475c08ce96" alt="Logo" width="1500" height="500">
+    <img src="https://github.com/Karene123/CPS_wages/assets/70621033/ff223f28-e8e7-4c39-ac2f-bc141b432116" alt="Logo" width="1500" height="500">
   </a>
   
 <!-- TABLE OF CONTENTS -->
@@ -20,7 +20,7 @@
 9. [Acknowledgments](#Acknowledgments)
 10. [Graphs](#Graphs)
 
-# Environment, Social, and Government Data (ESG) from the World Bank Data Bank
+# Labor Force Participation and Hourly Wages in the United States.
 
 <!-- Project Overview -->
 ## About The Project
@@ -55,7 +55,7 @@ Exploring the American Labor Market starting from 1976 with the following variab
   <!-- GETTING STARTED -->
 ## Getting Started
 
-This dataset was downloaded from [Predoc.org](https://predoc.org/-/media/project/chicago-booth/consortium/predoc/documents/task_overview.pdf) as part of one of their data task. I took this opporunity to perform a perform a thorough statistical analysis while answering the main research questions.
+This dataset was downloaded from [Predoc.org](https://predoc.org/-/media/project/chicago-booth/consortium/predoc/documents/task_overview.pdf) as part of one of their data task. I took this opportunity to perform a thorough statistical analysis while answering the main research questions.
 
 ### Prerequisites
 
